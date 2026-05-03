@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Avisos · EuskoMove{% endblock %}
+{% block content %}
+<div class="container section">
+  <p class="eyebrow">Incidencias y actualizaciones</p>
+  <h1 class="page-title">Avisos de servicio</h1>
+  {% if notices %}
+    <div class="notices-list">
+      {% for n in notices %}
+      <div class="notice-card card notice-{{ n.type }} {% if not n.active %}notice-inactive{% endif %}">
+        <div class="notice-head">
+          <span class="notice-type-badge notice-badge-{{ n.type }}">
+            {% if n.type=='warning' %}⚠️ Atención{% elif n.type=='error' %}🚫 Urgente{% else %}ℹ️ Info{% endif %}
+          </span>
+          {% if not n.active %}<span class="badge badge-past">Inactivo</span>{% endif %}
+        </div>
+        <h2 class="notice-title">{{ n.title }}</h2>
+        <p class="notice-text">{{ n.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">✅</div>
+      <h2>Sin avisos activos</h2>
+      <p>Todos los servicios operan con normalidad.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

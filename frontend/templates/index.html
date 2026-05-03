@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}EuskoMove · Autobuses Vitoria, Bilbao y Donostia{% endblock %}
+{% block content %}
+
+{% if active_notices %}
+<div class="notice-bar">
+  <div class="container notice-bar-inner">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span>{{ active_notices[0].title }}: {{ active_notices[0].text }}</span>
+    <a href="{{ url_for('public.avisos') }}" class="notice-more">Ver todos →</a>
+  </div>
+</div>
+{% endif %}
+
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-text">
+      <p class="eyebrow">🚌 Autobuses en el País Vasco</p>
+      <h1>Vitoria, Bilbao<br>y Donostia<br><span>conectadas.</span></h1>
+      <p class="hero-sub">Compra tu billete entre las tres capitales vascas. Sin colas, sin comisiones.</p>
+    </div>
+    <div class="search-card card">
+      <p class="search-card-label">Buscar billete</p>
+      <form action="{{ url_for('public.search') }}" method="get" class="search-form" novalidate>
+        <div class="search-row">
+          <div class="field-group">
+            <label for="origin">Origen</label>
+            <div class="select-wrap">
+              <select name="origin" id="origin" required>
+                <option value="">Selecciona ciudad</option>
+                {% for c in CITIES %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="button" class="swap-btn" onclick="swapCities()" aria-label="Intercambiar ciudades">⇄</button>
+          <div class="field-group">
+            <label for="destination">Destino</label>
+            <div class="select-wrap">
+              <select name="destination" id="destination" required>
+                <option value="">Selecciona ciudad</option>
+                {% for c in CITIES %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="search-row search-row-b">
+          <div class="field-group">
+            <label for="date">Fecha</label>
+            <input type="date" name="date" id="date" value="{{ today }}" min="{{ today }}" required>
+          </div>
+          <div class="field-group">
+            <label for="passengers">Viajeros</label>
+            <div class="select-wrap">
+              <select name="passengers" id="passengers">
+                {% for n in range(1,9) %}<option value="{{ n }}" {% if n==1 %}selected{% endif %}>{{ n }} viajero{% if n>1 %}s{% endif %}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            Buscar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<section class="section routes-section">
+  <div class="container">
+    <p class="eyebrow">Rutas disponibles</p>
+    <h2 class="section-title">6 rutas, 3 ciudades</h2>
+    <div class="routes-grid">
+      {% for orig,dest,dur,price in [
+        ("Vitoria-Gasteiz","Bilbao","50 min","4,90"),
+        ("Bilbao","Vitoria-Gasteiz","50 min","4,90"),
+        ("Vitoria-Gasteiz","Donostia-S.S.","1h 15 min","7,50"),
+        ("Donostia-S.S.","Vitoria-Gasteiz","1h 15 min","7,50"),
+        ("Bilbao","Donostia-S.S.","1h 20 min","6,50"),
+        ("Donostia-S.S.","Bilbao","1h 20 min","6,50"),
+      ] %}
+      <a href="{{ url_for('public.search', origin=orig, destination=dest, date=today) }}" class="route-card card">
+        <div class="route-cities"><span>{{ orig.split("-")[0] }}</span><span class="arrow">→</span><span>{{ dest.split("-")[0] }}</span></div>
+        <div class="route-meta"><span class="muted">{{ dur }}</span><span class="price">desde {{ price }} €</span></div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="features-section section">
+  <div class="container features-grid">
+    <div class="feature"><div class="feat-icon">🎟️</div><h3>Sin colas</h3><p>Compra online y muestra el billete desde el móvil.</p></div>
+    <div class="feature"><div class="feat-icon">💺</div><h3>Elige asiento</h3><p>Selecciona tu plaza en el mapa del autobús.</p></div>
+    <div class="feature"><div class="feat-icon">🔄</div><h3>Cancela fácil</h3><p>Gestiona tus reservas desde «Mis viajes».</p></div>
+  </div>
+</section>
+<script>
+function swapCities(){const o=document.getElementById("origin"),d=document.getElementById("destination");[o.value,d.value]=[d.value,o.value];}
+</script>
+{% endblock %}

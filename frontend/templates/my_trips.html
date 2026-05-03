@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Mis viajes · EuskoMove{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1 class="page-title">Mis viajes</h1>
+  {% if reservations %}
+    <div class="trips-list">
+      {% for res in reservations %}
+        {% set past = res.schedule.date < today %}
+        <div class="trip-card card {% if past %}trip-past{% endif %}">
+          <div class="trip-head">
+            <div>
+              <code class="locator">{{ res.locator }}</code>
+              {% if past %}<span class="badge badge-past">Pasado</span>
+              {% else %}<span class="badge badge-ok">Próximo</span>{% endif %}
+            </div>
+            <span class="muted small">{{ res.schedule.date }}</span>
+          </div>
+          <div class="trip-body">
+            <div class="fw6 trip-route">{{ res.route.origin }} → {{ res.route.destination }}</div>
+            <div class="muted small">{{ res.schedule.departure }} · Asiento {{ res.seat }} · {{ res.schedule.bus_code }}</div>
+          </div>
+          <div class="trip-foot">
+            <div>
+              <span class="price-amount">{{ "%.2f"|format(res.price_paid) }} €</span>
+              {% if res.discount_applied > 0 %}
+                <span class="bono-tag">Bono -{{ (res.discount_applied*100)|int }}%</span>
+              {% endif %}
+            </div>
+            {% if not past %}
+              <form method="post" action="{{ url_for('res.cancel', res_id=res.id) }}"
+                onsubmit="return confirm('¿Cancelar esta reserva?')">
+                <button type="submit" class="btn btn-danger btn-sm">Cancelar</button>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🎟️</div><h2>Sin reservas</h2>
+      <p>Todavía no tienes ningún viaje reservado.</p>
+      <a href="{{ url_for('public.index') }}" class="btn btn-primary">Buscar billete</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

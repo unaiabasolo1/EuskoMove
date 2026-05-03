@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Comprar billete · EuskoMove{% endblock %}
+{% block content %}
+<div class="container section">
+  <div class="book-layout">
+    <aside class="book-info card">
+      <p class="eyebrow">Tu billete</p>
+      <h1 class="book-title">{{ route.origin }}<br><span class="accent">→</span> {{ route.destination }}</h1>
+      <dl class="trip-dl">
+        <div class="trip-row"><dt>Fecha</dt><dd>{{ schedule.date }}</dd></div>
+        <div class="trip-row"><dt>Salida</dt><dd class="big-time">{{ schedule.departure }}</dd></div>
+        <div class="trip-row"><dt>Duración</dt><dd>{{ route.duration }}</dd></div>
+        <div class="trip-row"><dt>Bus</dt><dd>{{ schedule.bus_code }}</dd></div>
+        <div class="trip-row"><dt>Precio/persona</dt><dd>
+          {% if discount > 0 %}
+            <span class="price-original">{{ "%.2f"|format(route.price) }} €</span>
+            <span class="price-amount">{{ "%.2f"|format(route.price*(1-discount)) }} €</span>
+            <span class="bono-tag">Bono -{{ (discount*100)|int }}%</span>
+          {% else %}
+            <span class="price-amount">{{ "%.2f"|format(route.price) }} €</span>
+          {% endif %}
+        </dd></div>
+      </dl>
+      <div class="book-total">
+        <span class="muted small">Total {{ passengers }} viajero{% if passengers>1 %}s{% endif %}</span>
+        <span class="price-amount big">{{ "%.2f"|format(route.price*(1-discount)*passengers) }} €</span>
+      </div>
+    </aside>
+
+    <form method="post" action="{{ url_for('res.do_book', schedule_id=schedule.id) }}" class="seat-form card">
+      <input type="hidden" name="passengers" value="{{ passengers }}">
+      <h2>Elige {{ passengers }} asiento{% if passengers>1 %}s{% endif %}</h2>
+      <div class="seat-legend">
+        <span><i class="seat-demo free"></i>Libre</span>
+        <span><i class="seat-demo booked"></i>Ocupado</span>
+        <span><i class="seat-demo selected"></i>Seleccionado</span>
+      </div>
+      <div class="bus-wrap">
+        <div class="bus-front">🚌 Parte delantera · Conductor</div>
+        <div class="bus-grid" id="busGrid">
+          {% for row in range(1,11) %}
+            {% for col in ["A","B","_","C","D"] %}
+              {% if col=="_" %}<div class="aisle"></div>
+              {% else %}
+                {% set sid = row|string + col %}
+                {% set occ = sid in booked %}
+                <button type="button" class="seat {% if occ %}booked{% else %}free{% endif %}"
+                  data-seat="{{ sid }}" {% if occ %}disabled{% endif %}
+                  aria-label="Asiento {{ sid }}{% if occ %} ocupado{% endif %}">{{ sid }}</button>
+              {% endif %}
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+      <div id="selInfo" class="sel-info" aria-live="polite"><p class="muted">Ningún asiento seleccionado</p></div>
+      <div id="hSeats"></div>
+      <button type="submit" id="subBtn" class="btn btn-primary btn-full" disabled>
+        Confirmar compra · {{ "%.2f"|format(route.price*(1-discount)*passengers) }} €
+      </button>
+    </form>
+  </div>
+</div>
+<script>
+const MAX={{ passengers }};let sel=[];
+document.querySelectorAll(".seat.free").forEach(b=>{b.addEventListener("click",()=>{
+  const s=b.dataset.seat;
+  if(b.classList.contains("selected")){b.classList.remove("selected");sel=sel.filter(x=>x!==s);}
+  else{if(sel.length>=MAX){const f=sel.shift();document.querySelector(`[data-seat="${f}"]`).classList.remove("selected");}
+    b.classList.add("selected");sel.push(s);}upd();});});
+function upd(){
+  document.getElementById("hSeats").innerHTML=sel.map(s=>`<input type="hidden" name="seats" value="${s}">`).join("");
+  document.getElementById("selInfo").innerHTML=sel.length?`<p>Seleccionados: <strong>${sel.join(", ")}</strong> (${sel.length}/${MAX})</p>`:"<p class='muted'>Ningún asiento seleccionado</p>";
+  document.getElementById("subBtn").disabled=sel.length!==MAX;}
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>{% block title %}EuskoMove{% endblock %}</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static',filename='styles.css') }}">
+</head>
+<body>
+<a href="#main" class="skip-link">Saltar al contenido</a>
+<header class="nav">
+  <div class="container nav-inner">
+    <a href="{{ url_for('public.index') }}" class="brand">
+      <svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="1.8"/><path d="M8 21L16 8l8 13" stroke="#ffb21f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 21h10" stroke="#ffb21f" stroke-width="2.5" stroke-linecap="round"/><circle cx="16" cy="25" r="1.8" fill="#ffb21f"/></svg>
+      Eusko<span>Move</span>
+    </a>
+    <nav>
+      <a href="{{ url_for('public.index') }}" {% if request.endpoint=='public.index' %}class="active"{% endif %}>Inicio</a>
+      <a href="{{ url_for('public.search') }}" {% if request.endpoint=='public.search' %}class="active"{% endif %}>Horarios</a>
+      <a href="{{ url_for('public.avisos') }}" {% if request.endpoint=='public.avisos' %}class="active"{% endif %}>
+        Avisos
+        {% if active_notices %}<span class="badge-count">{{ active_notices|length }}</span>{% endif %}
+      </a>
+      <a href="{{ url_for('public.bonos') }}" {% if request.endpoint=='public.bonos' %}class="active"{% endif %}>Bonos</a>
+      {% if current_user() %}
+        <a href="{{ url_for('res.my_trips') }}" {% if request.endpoint=='res.my_trips' %}class="active"{% endif %}>Mis viajes</a>
+        {% if current_user().get('role')=='admin' %}
+          <a href="{{ url_for('admin.admin') }}" {% if request.endpoint=='admin.admin' %}class="active"{% endif %}>Admin</a>
+        {% endif %}
+      {% endif %}
+    </nav>
+    <div class="nav-actions">
+      {% if current_user() %}
+        <span class="nav-user">{{ current_user().get('name','').split()[0] }}</span>
+        <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline">
+          <button class="btn btn-ghost btn-sm">Salir</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-ghost btn-sm">Entrar</a>
+        <a href="{{ url_for('auth.register') }}" class="btn btn-primary btn-sm">Registrarse</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+<main id="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container container">
+        {% for cat,msg in messages %}
+          <div class="flash flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="footer">
+  <div class="container footer-inner">
+    <p class="brand-sm">Eusko<span>Move</span></p>
+    <p class="muted">Vitoria-Gasteiz · Bilbao · Donostia-S.S.</p>
+    <p class="tiny muted">Demo educativa — no es un servicio real</p>
+  </div>
+</footer>
+</body>
+</html>

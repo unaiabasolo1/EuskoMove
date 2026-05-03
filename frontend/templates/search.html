@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Horarios · EuskoMove{% endblock %}
+{% block content %}
+<div class="container section">
+  <div class="card search-bar-wrap">
+    <form action="{{ url_for('public.search') }}" method="get" novalidate>
+      <div class="compact-row">
+        <div class="field-group fg-sm"><label>Origen</label>
+          <div class="select-wrap"><select name="origin">
+            <option value="">Ciudad</option>
+            {% for c in CITIES %}<option value="{{ c }}" {% if c==origin %}selected{% endif %}>{{ c }}</option>{% endfor %}
+          </select></div></div>
+        <div class="field-group fg-sm"><label>Destino</label>
+          <div class="select-wrap"><select name="destination">
+            <option value="">Ciudad</option>
+            {% for c in CITIES %}<option value="{{ c }}" {% if c==destination %}selected{% endif %}>{{ c }}</option>{% endfor %}
+          </select></div></div>
+        <div class="field-group fg-sm"><label>Fecha</label>
+          <input type="date" name="date" value="{{ travel_date }}" min="{{ min_date }}" max="{{ max_date }}"></div>
+        <div class="field-group fg-xs"><label>Viajeros</label>
+          <div class="select-wrap"><select name="passengers">
+            {% for n in range(1,9) %}<option value="{{ n }}" {% if n==passengers %}selected{% endif %}>{{ n }}</option>{% endfor %}
+          </select></div></div>
+        <button type="submit" class="btn btn-primary">Buscar</button>
+      </div>
+    </form>
+  </div>
+
+  {% if origin and destination %}
+    <h1 class="results-title">{{ origin }} <span>→</span> {{ destination }}</h1>
+    <p class="muted small">{{ travel_date }} · {{ passengers }} viajero{% if passengers>1 %}s{% endif %}</p>
+
+    {% if results %}
+      <p class="results-count">{{ results|length }} servicio{% if results|length!=1 %}s{% endif %} disponible{% if results|length!=1 %}s{% endif %}</p>
+      <div class="results-list">
+        {% for r in results %}
+        <div class="result-card card">
+          <div class="result-main">
+            <div class="result-time-col">
+              <span class="big-time">{{ r.schedule.departure }}</span>
+              <span class="dur-badge">{{ r.route.duration }}</span>
+            </div>
+            <div class="result-info">
+              <div class="fw6">{{ r.route.origin }} → {{ r.route.destination }}</div>
+              <div class="muted small">Bus {{ r.schedule.bus_code }} ·
+                <span {% if r.available < 10 %}class="seats-low"{% endif %}>{{ r.available }} plazas libres</span>
+              </div>
+              {% if r.discount > 0 %}
+              <div class="discount-badge">Bono aplicado: -{{ (r.discount*100)|int }}%</div>
+              {% endif %}
+            </div>
+          </div>
+          <div class="result-right">
+            <div>
+              <span class="price-amount">{{ "%.2f"|format(r.total_price) }} €</span>
+              {% if passengers>1 %}<span class="price-note">{{ passengers }} viajeros</span>{% endif %}
+              {% if r.discount > 0 %}<span class="price-note" style="color:var(--success)">con descuento bono</span>{% endif %}
+            </div>
+            <a href="{{ url_for('res.book', schedule_id=r.schedule.id, passengers=passengers) }}" class="btn btn-primary">
+              Comprar billete
+            </a>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <div class="empty-icon">🔍</div><h2>Sin resultados</h2>
+        <p>No hay servicios para esta ruta en la fecha indicada con {{ passengers }} viajero{% if passengers>1 %}s{% endif %}.</p>
+        <p class="muted small">Prueba otra fecha o número de viajeros.</p>
+      </div>
+    {% endif %}
+  {% elif origin == destination and origin %}
+    <div class="empty-state">
+      <div class="empty-icon">⚠️</div><h2>Origen y destino iguales</h2>
+      <p>Selecciona ciudades distintas para origen y destino.</p>
+    </div>
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon">🗺️</div><h2>Selecciona tu ruta</h2>
+      <p>Elige origen, destino y fecha para ver los horarios disponibles.</p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

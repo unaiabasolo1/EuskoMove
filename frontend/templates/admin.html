@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Admin · EuskoMove{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1 class="page-title">Panel de administración</h1>
+  <div class="admin-stats card">
+    <div class="stat"><span class="stat-num">{{ stats.users }}</span><span class="muted small">Usuarios</span></div>
+    <div class="stat"><span class="stat-num">{{ stats.routes }}</span><span class="muted small">Rutas</span></div>
+    <div class="stat"><span class="stat-num">{{ stats.schedules }}</span><span class="muted small">Horarios</span></div>
+    <div class="stat"><span class="stat-num">{{ stats.reservations }}</span><span class="muted small">Reservas</span></div>
+  </div>
+
+  <h2 class="section-h2">Gestión de avisos</h2>
+  <div class="card" style="margin-bottom:22px">
+    <form method="post" action="{{ url_for('notice.add_notice') }}" class="notice-form">
+      <div class="field-group"><label>Título</label><input type="text" name="title" required placeholder="Ej: Retraso en línea Bilbao-Donostia"></div>
+      <div class="field-group"><label>Mensaje</label><input type="text" name="text" required placeholder="Descripción del aviso..."></div>
+      <div class="field-group"><label>Tipo</label>
+        <div class="select-wrap"><select name="type">
+          <option value="info">ℹ️ Información</option>
+          <option value="warning">⚠️ Atención</option>
+          <option value="error">🚫 Urgente</option>
+        </select></div>
+      </div>
+      <button type="submit" class="btn btn-primary" style="align-self:end">Publicar aviso</button>
+    </form>
+  </div>
+  {% if notices %}
+  <div class="notices-admin-list">
+    {% for n in notices %}
+    <div class="notice-admin-row card notice-{{ n.type }}">
+      <div>
+        <strong>{{ n.title }}</strong> — <span class="muted small">{{ n.text }}</span>
+        {% if not n.active %}<span class="badge badge-past">Inactivo</span>{% endif %}
+      </div>
+      <div class="notice-admin-actions">
+        <form method="post" action="{{ url_for('notice.toggle_notice', nid=n.id) }}" style="display:inline">
+          <button type="submit" class="btn btn-ghost btn-sm">{% if n.active %}Desactivar{% else %}Activar{% endif %}</button>
+        </form>
+        <form method="post" action="{{ url_for('notice.delete_notice', nid=n.id) }}" style="display:inline" onsubmit="return confirm('¿Eliminar?')">
+          <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <h2 class="section-h2">Reservas recientes</h2>
+  {% if reservations %}
+  <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>Loc.</th><th>Usuario</th><th>Ruta</th><th>Fecha</th><th>Salida</th><th>Asiento</th><th>Precio</th><th></th></tr></thead>
+      <tbody>
+      {% for res in reservations[:60] %}
+        <tr>
+          <td><code>{{ res.locator }}</code></td>
+          <td class="muted small">{{ res.user.get('email','—') }}</td>
+          <td>{{ res.route.origin }} → {{ res.route.destination }}</td>
+          <td>{{ res.schedule.date }}</td>
+          <td>{{ res.schedule.departure }}</td>
+          <td>{{ res.seat }}</td>
+          <td>{{ "%.2f"|format(res.price_paid) }} €</td>
+          <td>
+            <form method="post" action="{{ url_for('admin.admin_delete_res', res_id=res.id) }}"
+              onsubmit="return confirm('¿Eliminar?')">
+              <button type="submit" class="btn btn-danger btn-sm">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}<p class="muted">Sin reservas todavía.</p>{% endif %}
+
+  <h2 class="section-h2">Añadir ruta</h2>
+  <div class="card">
+    <form method="post" action="{{ url_for('admin.admin_add_route') }}" class="admin-form">
+      <div class="field-group"><label>Origen</label><input type="text" name="origin" required></div>
+      <div class="field-group"><label>Destino</label><input type="text" name="destination" required></div>
+      <div class="field-group"><label>Duración</label><input type="text" name="duration" placeholder="1h 00 min" required></div>
+      <div class="field-group"><label>Precio €</label><input type="number" name="price" step="0.01" min="0.01" required></div>
+      <button type="submit" class="btn btn-primary" style="align-self:end">Añadir</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

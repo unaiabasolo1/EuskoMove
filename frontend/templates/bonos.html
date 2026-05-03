@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Bonos · EuskoMove{% endblock %}
+{% block content %}
+<div class="container section">
+  <p class="eyebrow">Ahorra en tus desplazamientos</p>
+  <h1 class="page-title">Bonos de transporte</h1>
+  <p class="hero-sub" style="margin-bottom:36px">Compra un bono y el descuento se aplica automáticamente al comprar cualquier billete.</p>
+
+  {% if current_user() and my_bonos %}
+  <div class="my-bonos-wrap card" style="margin-bottom:28px">
+    <h2 class="section-h2" style="margin-top:0">Mis bonos activos</h2>
+    <div class="my-bonos-grid">
+      {% for ub in my_bonos %}
+        {% set b = bonos|selectattr("id","equalto",ub.bono_id)|first %}
+        {% if b and ub.trips_left > 0 %}
+        <div class="my-bono-card">
+          <span class="bono-name">{{ b.name }}</span>
+          <span class="bono-trips-left">{{ ub.trips_left }} viajes restantes</span>
+          <div class="bono-bar"><div class="bono-fill" style="width:{{ (ub.trips_left/b.trips*100)|int }}%"></div></div>
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="bonos-grid">
+    {% for b in bonos %}
+    <div class="bono-card card">
+      <div class="bono-header">
+        <h2 class="bono-title">{{ b.name }}</h2>
+        <span class="bono-discount">-{{ (b.discount*100)|int }}%</span>
+      </div>
+      <p class="bono-desc muted">{{ b.desc }}</p>
+      <ul class="bono-features">
+        <li>✓ {{ b.trips }} viajes incluidos</li>
+        <li>✓ Descuento automático al pagar</li>
+        <li>✓ Válido en todas las rutas</li>
+      </ul>
+      <div class="bono-footer">
+        <span class="price-amount">{{ "%.2f"|format(b.price) }} €</span>
+        {% if current_user() %}
+          <form method="post" action="{{ url_for('bono.buy_bono', bono_id=b.id) }}">
+            <button type="submit" class="btn btn-primary">Activar bono</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}" class="btn btn-ghost">Entra para comprar</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

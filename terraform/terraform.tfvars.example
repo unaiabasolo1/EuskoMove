@@ -1,0 +1,16 @@
+project_name         = "euskomove"
+environment          = "dev"
+location             = "westeurope"
+app_service_plan_sku = "B1"
+python_version       = "3.12"
+
+# Adjust if your Flask entrypoint isn't `app.py` exposing `app`.
+# Examples:
+#   "gunicorn --bind=0.0.0.0:8000 wsgi:app"
+#   "gunicorn --bind=0.0.0.0:8000 run:app"
+startup_command = "gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app"
+
+app_settings = {
+  # SECRET_KEY = "set-via-keyvault-or-gh-secret"
+  # DATABASE_URL = "@Microsoft.KeyVault(SecretUri=https://<vault>.vault.azure.net/secrets/database-url/)"
+}
