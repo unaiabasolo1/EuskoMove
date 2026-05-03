@@ -60,12 +60,13 @@ jobs:
         with:
           name: python-app
       
-      - name: Login to Azure
-        uses: azure/login@v2
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v3
+        id: deploy-to-webapp
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_293EF00068574F41A9F76A1F9DBBD470 }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_4ABFFAC83CE84453B48521DE8660B7B7 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_30BB8321C9524D078891E512A9E47296 }}
+          app-name: 'euskomove-dev-dmucxy'
+          slot-name: 'Production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
 
       - name: 'Deploy to Azure Web App'
         uses: azure/webapps-deploy@v3
