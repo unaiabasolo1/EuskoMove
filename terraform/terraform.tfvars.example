@@ -1,6 +1,6 @@
 project_name         = "euskomove"
 environment          = "dev"
-location             = "westeurope"
+location             = "spaincentral"
 app_service_plan_sku = "B1"
 python_version       = "3.12"
 
