@@ -1,4 +1,4 @@
-name: terraform
+name: Terraform
 
 on:
   workflow_dispatch:
@@ -23,9 +23,10 @@ jobs:
         uses: hashicorp/setup-terraform@v3
 
       - name: Azure Login
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+        run: az login --username ${{ secrets.AZURE_USERNAME }} --password ${{ secrets.AZURE_PASSWORD }}
+
+      - name: Set subscription
+        run: az account set --subscription df2de2c2-02df-4934-a701-2ef152bc4372
 
       - name: Terraform Init
         run: terraform init
