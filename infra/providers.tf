@@ -12,19 +12,19 @@ terraform {
     }
   }
 
-  # Optional: store remote state in an Azure Storage Account.
-  # Uncomment and configure if you want shared state.
-  #
-  # backend "azurerm" {
-  #   resource_group_name  = "tfstate-rg"
-  #   storage_account_name = "tfstateeuskomove"
-  #   container_name       = "tfstate"
-  #   key                  = "euskomove.tfstate"
-  # }
+  backend "azurerm" {
+    resource_group_name  = "euskomove-tfstate-rg"
+    storage_account_name = "euskomovtfstate"
+    container_name       = "tfstate"
+    key                  = "euskomove.tfstate"
+    use_oidc             = true
+    use_azuread_auth     = true
+  }
 }
 
 provider "azurerm" {
   features {}
+  use_oidc = true
 }
 
 provider "random" {}
