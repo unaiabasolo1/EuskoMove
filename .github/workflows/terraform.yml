@@ -45,16 +45,20 @@ jobs:
           terraform_version: "~1.5"
 
       - name: Terraform Init
+        working-directory: infra
         run: terraform init
 
       - name: Terraform Plan
+        working-directory: infra
         if: ${{ github.event.inputs.action == 'plan' || github.event.inputs.action == 'apply' }}
-        run: terraform plan -out=tfplan -var-file="terraform.tfvars"
+        run: terraform plan -out=tfplan
 
       - name: Terraform Apply
+        working-directory: infra
         if: ${{ github.event.inputs.action == 'apply' }}
         run: terraform apply tfplan
 
       - name: Terraform Destroy
+        working-directory: infra
         if: ${{ github.event.inputs.action == 'destroy' }}
-        run: terraform destroy -auto-approve -var-file="terraform.tfvars"
+        run: terraform destroy -auto-approve
