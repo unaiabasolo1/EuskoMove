@@ -21,3 +21,9 @@ Abre: http://127.0.0.1:3000
 ## Credenciales
 - Admin:   admin@euskomove.eus / admin123
 - Usuario: ane@euskomove.eus   / user123
+
+ 
+
+Terminal despues de desplegar todo: 
+
+az webapp list --resource-group euskomove-dev-rg --query "[].defaultHostName" -o tsv 
