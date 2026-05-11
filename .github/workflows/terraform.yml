@@ -27,6 +27,7 @@ jobs:
   terraform:
     name: "Terraform ${{ github.event.inputs.action }}"
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: Checkout
