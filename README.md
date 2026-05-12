@@ -35,8 +35,6 @@
 - [Uso](#uso)
 - [Roles del Sistema](#roles-del-sistema)
 - [Seguridad](#seguridad)
-- [Contribuciones](#contribuciones)
-- [Licencia](#licencia)
 
 ---
 
@@ -119,3 +117,11 @@ EuskoMove implementa las siguientes medidas de seguridad:
 - Gestión de sesiones segura
 - Control de acceso por roles
 - Contraseñas almacenadas con hash
+
+---
+
+<div align="center">
+
+Hecho por [unaiabasolo1](https://github.com/unaiabasolo1)
+
+</div>
