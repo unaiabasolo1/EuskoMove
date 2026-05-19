@@ -19,7 +19,7 @@ app = Flask(
     template_folder="frontend/templates",
     static_folder="frontend/static",
 )
-app.secret_key = "euskomove-secret-2025-eus"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret")
 
 
 @app.context_processor
