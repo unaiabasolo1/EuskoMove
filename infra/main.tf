@@ -109,6 +109,10 @@ resource "azurerm_key_vault" "this" {
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
   tags                       = local.common_tags
+
+  lifecycle {
+    ignore_changes = [soft_delete_retention_days]
+  }
 }
 
 resource "azurerm_role_assignment" "kv_terraform" {
@@ -148,6 +152,10 @@ resource "azurerm_postgresql_flexible_server" "this" {
   authentication {
     active_directory_auth_enabled = false
     password_auth_enabled         = true
+  }
+
+  lifecycle {
+    ignore_changes = [zone, high_availability]
   }
 }
 
