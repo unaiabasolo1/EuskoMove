@@ -27,3 +27,11 @@ output "principal_id" {
   description = "System-assigned managed identity principal ID. Use for Key Vault / DB role assignments."
   value       = azurerm_linux_web_app.this.identity[0].principal_id
 }
+
+output "key_vault_name" {
+  value = azurerm_key_vault.this.name
+}
+
+output "postgresql_fqdn" {
+  value = azurerm_postgresql_flexible_server.this.fqdn
+}

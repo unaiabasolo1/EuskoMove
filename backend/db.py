@@ -1,94 +1,236 @@
-
-"""db.py — almacén de datos en memoria."""
-import hashlib, uuid
+"""db.py — acceso a datos con SQLAlchemy + PostgreSQL."""
+import os, hashlib, uuid
 from datetime import date, timedelta
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
+from sqlalchemy import Column, Integer, String, Float, Boolean, Date, ForeignKey
+from sqlalchemy.orm import relationship
+
+DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///euskomove.db")
+
+engine = create_engine(DATABASE_URL, pool_pre_ping=True)
+SessionLocal = sessionmaker(bind=engine)
+
+
+def get_db() -> Session:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 def _hash(pw): return hashlib.sha256(pw.encode()).hexdigest()
+def make_locator(): return uuid.uuid4().hex[:8].upper()
 
-def _make_schedules():
-    s, sid, today = {}, 1, date.today()
+
+# ─── Modelos ──────────────────────────────────────────────────────────────────
+
+class Base(DeclarativeBase):
+    pass
+
+
+class User(Base):
+    __tablename__ = "users"
+    id       = Column(Integer, primary_key=True)
+    name     = Column(String(120), nullable=False)
+    email    = Column(String(120), unique=True, nullable=False)
+    password = Column(String(64), nullable=False)
+    role     = Column(String(20), default="user")
+    reservations = relationship("Reservation", back_populates="user")
+    bonos        = relationship("UserBono", back_populates="user")
+
+
+class Route(Base):
+    __tablename__ = "routes"
+    id          = Column(Integer, primary_key=True)
+    origin      = Column(String(80), nullable=False)
+    destination = Column(String(80), nullable=False)
+    duration    = Column(String(20))
+    price       = Column(Float)
+    schedules   = relationship("Schedule", back_populates="route")
+
+
+class Schedule(Base):
+    __tablename__ = "schedules"
+    id        = Column(Integer, primary_key=True)
+    route_id  = Column(Integer, ForeignKey("routes.id"))
+    date      = Column(String(10))
+    departure = Column(String(5))
+    bus_code  = Column(String(20))
+    capacity  = Column(Integer, default=50)
+    route        = relationship("Route", back_populates="schedules")
+    reservations = relationship("Reservation", back_populates="schedule")
+
+
+class Reservation(Base):
+    __tablename__ = "reservations"
+    id               = Column(Integer, primary_key=True)
+    user_id          = Column(Integer, ForeignKey("users.id"))
+    schedule_id      = Column(Integer, ForeignKey("schedules.id"))
+    seat             = Column(String(5))
+    locator          = Column(String(8))
+    price_paid       = Column(Float)
+    discount_applied = Column(Float, default=0.0)
+    user     = relationship("User", back_populates="reservations")
+    schedule = relationship("Schedule", back_populates="reservations")
+
+
+class Notice(Base):
+    __tablename__ = "notices"
+    id     = Column(Integer, primary_key=True)
+    type   = Column(String(20))
+    title  = Column(String(120))
+    text   = Column(String(500))
+    active = Column(Boolean, default=True)
+
+
+class Bono(Base):
+    __tablename__ = "bonos"
+    id       = Column(Integer, primary_key=True)
+    name     = Column(String(80))
+    trips    = Column(Integer)
+    discount = Column(Float)
+    price    = Column(Float)
+    desc     = Column(String(200))
+    users    = relationship("UserBono", back_populates="bono")
+
+
+class UserBono(Base):
+    __tablename__ = "user_bonos"
+    id         = Column(Integer, primary_key=True)
+    user_id    = Column(Integer, ForeignKey("users.id"))
+    bono_id    = Column(Integer, ForeignKey("bonos.id"))
+    trips_left = Column(Integer)
+    purchased_at = Column(String(10))
+    user = relationship("User", back_populates="bonos")
+    bono = relationship("Bono", back_populates="users")
+
+
+# ─── Inicialización ───────────────────────────────────────────────────────────
+
+def init_db():
+    """Crea tablas y rellena datos iniciales si la BD está vacía."""
+    Base.metadata.create_all(engine)
+    db = SessionLocal()
+    try:
+        if db.query(User).count() == 0:
+            _seed(db)
+    finally:
+        db.close()
+
+
+def _seed(db: Session):
+    # Usuarios
+    db.add_all([
+        User(id=1, name="Admin EuskoMove", email="admin@euskomove.eus",
+             password=_hash("admin123"), role="admin"),
+        User(id=2, name="Ane Etxebarria", email="ane@euskomove.eus",
+             password=_hash("user123"), role="user"),
+    ])
+
+    # Rutas
+    routes_data = [
+        (1, "Vitoria-Gasteiz", "Bilbao",           "50 min",    4.90),
+        (2, "Bilbao",           "Vitoria-Gasteiz",  "50 min",    4.90),
+        (3, "Vitoria-Gasteiz", "Donostia-S.S.",    "1h 15 min", 7.50),
+        (4, "Donostia-S.S.",   "Vitoria-Gasteiz",  "1h 15 min", 7.50),
+        (5, "Bilbao",           "Donostia-S.S.",    "1h 20 min", 6.50),
+        (6, "Donostia-S.S.",   "Bilbao",            "1h 20 min", 6.50),
+    ]
+    for rid, org, dst, dur, price in routes_data:
+        db.add(Route(id=rid, origin=org, destination=dst, duration=dur, price=price))
+
+    # Horarios (14 días)
     times = {
-        1:["07:00","08:30","10:00","11:30","13:00","14:30","16:00","17:30","19:00","20:30"],
-        2:["07:30","09:00","10:30","12:00","13:30","15:00","16:30","18:00","19:30","21:00"],
-        3:["07:15","09:15","11:15","13:15","15:15","17:15","19:15","21:15"],
-        4:["08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"],
-        5:["08:00","10:00","12:00","14:00","16:30","18:30","20:30"],
-        6:["08:45","10:45","12:45","14:45","17:15","19:15","21:15"],
+        1: ["07:00","08:30","10:00","11:30","13:00","14:30","16:00","17:30","19:00","20:30"],
+        2: ["07:30","09:00","10:30","12:00","13:30","15:00","16:30","18:00","19:30","21:00"],
+        3: ["07:15","09:15","11:15","13:15","15:15","17:15","19:15","21:15"],
+        4: ["08:00","10:00","12:00","14:00","16:00","18:00","20:00","22:00"],
+        5: ["08:00","10:00","12:00","14:00","16:30","18:30","20:30"],
+        6: ["08:45","10:45","12:45","14:45","17:15","19:15","21:15"],
     }
+    sid = 1
+    today = date.today()
     for offset in range(14):
         d = today + timedelta(days=offset)
         for rid, tlist in times.items():
             for t in tlist:
-                s[sid] = {"id":sid,"route_id":rid,"date":d.isoformat(),
-                          "departure":t,"bus_code":f"EM{rid:02d}{sid:05d}"[-7:],"capacity":50}
+                db.add(Schedule(
+                    id=sid, route_id=rid, date=d.isoformat(),
+                    departure=t, bus_code=f"EM{rid:02d}{sid:05d}"[-7:], capacity=50
+                ))
                 sid += 1
-    return s
 
-ROUTES = {
-    1:{"id":1,"origin":"Vitoria-Gasteiz","destination":"Bilbao",          "duration":"50 min",   "price":4.90},
-    2:{"id":2,"origin":"Bilbao",          "destination":"Vitoria-Gasteiz","duration":"50 min",   "price":4.90},
-    3:{"id":3,"origin":"Vitoria-Gasteiz","destination":"Donostia-S.S.",   "duration":"1h 15 min","price":7.50},
-    4:{"id":4,"origin":"Donostia-S.S.",  "destination":"Vitoria-Gasteiz","duration":"1h 15 min","price":7.50},
-    5:{"id":5,"origin":"Bilbao",          "destination":"Donostia-S.S.",  "duration":"1h 20 min","price":6.50},
-    6:{"id":6,"origin":"Donostia-S.S.",  "destination":"Bilbao",          "duration":"1h 20 min","price":6.50},
-}
-SCHEDULES = _make_schedules()
+    # Avisos
+    db.add_all([
+        Notice(id=1, type="info",    title="Cambio de horario",
+               text="El servicio Bilbao→Donostia de las 08:00 h sale a las 08:15 h los lunes.", active=True),
+        Notice(id=2, type="warning", title="Obras en A-1",
+               text="Posibles retrasos de 10-15 min en la ruta Vitoria↔Bilbao por obras en la A-1.", active=True),
+        Notice(id=3, type="info",    title="Servicio especial",
+               text="Se añaden refuerzos los viernes por la tarde en todas las rutas.", active=True),
+    ])
 
-USERS = {
-    1:{"id":1,"name":"Admin EuskoMove","email":"admin@euskomove.eus","password":_hash("admin123"),"role":"admin"},
-    2:{"id":2,"name":"Ane Etxebarria", "email":"ane@euskomove.eus", "password":_hash("user123"), "role":"user"},
-}
+    # Bonos
+    db.add_all([
+        Bono(id=1, name="Bono 10",     trips=10, discount=0.20, price=39.20,
+             desc="10 viajes con 20% de descuento"),
+        Bono(id=2, name="Bono Joven",  trips=10, discount=0.30, price=34.30,
+             desc="Para menores de 26 años · 30% de descuento"),
+        Bono(id=3, name="Bono Mensual",trips=30, discount=0.35, price=95.55,
+             desc="30 viajes al mes con 35% de descuento"),
+    ])
 
-RESERVATIONS = {}
-CITIES = ["Vitoria-Gasteiz","Bilbao","Donostia-S.S."]
+    db.commit()
 
-# Avisos de incidencias
-NOTICES = {
-    1:{"id":1,"type":"info",   "title":"Cambio de horario","text":"El servicio Bilbao→Donostia de las 08:00 h sale a las 08:15 h los lunes.","active":True},
-    2:{"id":2,"type":"warning","title":"Obras en A-1",      "text":"Posibles retrasos de 10-15 min en la ruta Vitoria↔Bilbao por obras en la A-1.","active":True},
-    3:{"id":3,"type":"info",   "title":"Servicio especial","text":"Se añaden refuerzos los viernes por la tarde en todas las rutas.","active":True},
-}
 
-# Bonos de transporte
-BONOS = {
-    1:{"id":1,"name":"Bono 10",    "trips":10,"discount":0.20,"price":39.20, "desc":"10 viajes con 20% de descuento"},
-    2:{"id":2,"name":"Bono Joven", "trips":10,"discount":0.30,"price":34.30, "desc":"Para menores de 26 años · 30% de descuento"},
-    3:{"id":3,"name":"Bono Mensual","trips":30,"discount":0.35,"price":95.55,"desc":"30 viajes al mes con 35% de descuento"},
-}
+# ─── Funciones de ayuda (misma interfaz que antes) ───────────────────────────
 
-USER_BONOS = {}   # {user_id: [{bono_id, trips_left, purchased_at}]}
+def get_booked_seats(schedule_id: int) -> set:
+    db = SessionLocal()
+    try:
+        rows = db.query(Reservation.seat).filter_by(schedule_id=schedule_id).all()
+        return {r.seat for r in rows}
+    finally:
+        db.close()
 
-_c = {"uid":3,"rid":1,"nid":4,"bid":1}
 
-def next_uid():
-    v=_c["uid"]; _c["uid"]+=1; return v
-def next_rid():
-    v=_c["rid"]; _c["rid"]+=1; return v
-def next_nid():
-    v=_c["nid"]; _c["nid"]+=1; return v
+def available_seats(schedule_id: int) -> int:
+    db = SessionLocal()
+    try:
+        sch = db.query(Schedule).get(schedule_id)
+        return 0 if not sch else sch.capacity - len(get_booked_seats(schedule_id))
+    finally:
+        db.close()
 
-def get_booked_seats(schedule_id):
-    return {r["seat"] for r in RESERVATIONS.values() if r["schedule_id"]==schedule_id}
 
-def available_seats(schedule_id):
-    s = SCHEDULES.get(schedule_id)
-    return 0 if not s else s["capacity"] - len(get_booked_seats(schedule_id))
+def user_active_bono(user_id: int):
+    db = SessionLocal()
+    try:
+        ub = db.query(UserBono).filter(
+            UserBono.user_id == user_id,
+            UserBono.trips_left > 0
+        ).first()
+        if ub:
+            return {"bono_id": ub.bono_id, "trips_left": ub.trips_left}
+        return None
+    finally:
+        db.close()
 
-def make_locator():
-    return uuid.uuid4().hex[:8].upper()
 
-def user_active_bono(user_id):
-    """Devuelve el primer bono con viajes disponibles del usuario, o None."""
-    for ub in USER_BONOS.get(user_id, []):
-        if ub["trips_left"] > 0:
-            return ub
-    return None
-
-def use_bono_trip(user_id):
-    """Descuenta un viaje del bono activo. Devuelve el % de descuento o 0."""
-    ub = user_active_bono(user_id)
-    if ub:
-        bono = BONOS[ub["bono_id"]]
-        ub["trips_left"] -= 1
-        return bono["discount"]
-    return 0.0
+def use_bono_trip(user_id: int) -> float:
+    db = SessionLocal()
+    try:
+        ub = db.query(UserBono).filter(
+            UserBono.user_id == user_id,
+            UserBono.trips_left > 0
+        ).first()
+        if ub:
+            bono = db.query(Bono).get(ub.bono_id)
+            ub.trips_left -= 1
+            db.commit()
+            return bono.discount
+        return 0.0
+    finally:
+        db.close()
