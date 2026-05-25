@@ -65,3 +65,21 @@ variable "tags" {
     managedBy = "terraform"
   }
 }
+
+variable "db_admin_username" {
+  description = "Usuario administrador de PostgreSQL."
+  type        = string
+  default     = "euskoadmin"
+}
+
+variable "db_name" {
+  description = "Nombre de la base de datos."
+  type        = string
+  default     = "euskomovedb"
+}
+
+variable "db_sku" {
+  description = "SKU del PostgreSQL Flexible Server."
+  type        = string
+  default     = "B_Standard_B1ms"
+}

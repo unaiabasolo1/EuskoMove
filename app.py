@@ -13,14 +13,17 @@ from backend.routes.reservation_routes import res_bp
 from backend.routes.notice_routes import notice_bp
 from backend.routes.admin_routes import admin_bp
 from backend.routes.bono_routes import bono_bp
+from backend.db import init_db
 
 app = Flask(
     __name__,
     template_folder="frontend/templates",
     static_folder="frontend/static",
 )
-app.secret_key = "euskomove-secret-2025-eus"
+app.secret_key = os.environ.get("FLASK_SECRET_KEY", "euskomove-secret-2025-eus")
 
+with app.app_context():
+    init_db()
 
 @app.context_processor
 def inject_current_user():
