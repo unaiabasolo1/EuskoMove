@@ -76,7 +76,8 @@ EuskoMove/
 
 1. **Clona el repositorio**
    ```bash
-   ghjhyj
+   para saber el enlace de la web
+   az webapp list --resource-group euskomove-dev-rg --query "[].defaultHostName" -o tsv
    ```
 
 ---
