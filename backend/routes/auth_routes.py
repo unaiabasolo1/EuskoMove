@@ -1,5 +1,5 @@
 from flask import Blueprint, render_template, request, redirect, url_for, flash, session
-from backend.db import SessionLocal, User, _hash
+from backend.db import SessionLocal, User, _hash, check_password
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -25,9 +25,12 @@ def do_login():
     db = SessionLocal()
     try:
         user = db.query(User).filter_by(email=email).first()
-        if not user or user.password != _hash(pw):
+        
+        # 👇 CAMBIO CLAVE: Comprobamos la contraseña usando el verificador robusto de bcrypt
+        if not user or not check_password(pw, user.password):
             flash("Email o contraseña incorrectos.", "error")
             return render_template("login.html", next=nxt, email=email)
+            
         session["user_id"] = user.id
         flash(f"¡Bienvenido/a, {user.name.split()[0]}!", "success")
     finally:
@@ -49,18 +52,23 @@ def do_register():
     name  = request.form.get("name", "").strip()
     email = request.form.get("email", "").strip().lower()
     pw    = request.form.get("password", "")
-    pw2   = request.form.get("password2", "")
+    password2   = request.form.get("password2", "") # Ajustado a password2 del HTML original
+    
     if not name or not email or not pw:
         flash("Todos los campos son obligatorios.", "error")
         return render_template("register.html", name=name, email=email)
-    if pw != pw2:
+        
+    if pw != password2:
         flash("Las contraseñas no coinciden.", "error")
         return render_template("register.html", name=name, email=email)
+        
     db = SessionLocal()
     try:
         if db.query(User).filter_by(email=email).first():
             flash("Ese email ya está registrado.", "error")
             return render_template("register.html", name=name, email=email)
+            
+        # 👇 Al usar _hash(pw), el nuevo db.py creará automáticamente un hash bcrypt seguro
         user = User(name=name, email=email, password=_hash(pw), role="user")
         db.add(user)
         db.commit()

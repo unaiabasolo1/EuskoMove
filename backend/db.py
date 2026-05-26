@@ -1,5 +1,6 @@
 """db.py — acceso a datos con SQLAlchemy + PostgreSQL."""
-import os, hashlib, uuid
+import os, uuid
+import bcrypt
 from datetime import date, timedelta
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, DeclarativeBase, Session
@@ -19,8 +20,20 @@ def get_db() -> Session:
     finally:
         db.close()
 
+# ─── NUEVAS FUNCIONES DE SEGURIDAD CON BCRYPT ─────────────────────────────────
 
-def _hash(pw): return hashlib.sha256(pw.encode()).hexdigest()
+def _hash(pw: str) -> str:
+    """Genera un hash bcrypt seguro con salt automático y factor de coste 12."""
+    salt = bcrypt.gensalt(rounds=12)
+    hash_bytes = bcrypt.hashpw(pw.encode('utf-8'), salt)
+    return hash_bytes.decode('utf-8')
+
+def check_password(password_plana: str, hash_guardado: str) -> bool:
+    """Verifica de forma segura si la contraseña introducida coincide con el hash."""
+    if not password_plana or not hash_guardado:
+        return False
+    return bcrypt.checkpw(password_plana.encode('utf-8'), hash_guardado.encode('utf-8'))
+
 def make_locator(): return uuid.uuid4().hex[:8].upper()
 
 
@@ -35,7 +48,7 @@ class User(Base):
     id       = Column(Integer, primary_key=True)
     name     = Column(String(120), nullable=False)
     email    = Column(String(120), unique=True, nullable=False)
-    password = Column(String(64), nullable=False)
+    password = Column(String(64), nullable=False)  # El hash de bcrypt (60 chars) cabe perfectamente aquí
     role     = Column(String(20), default="user")
     reservations = relationship("Reservation", back_populates="user")
     bonos        = relationship("UserBono", back_populates="user")
@@ -65,7 +78,7 @@ class Schedule(Base):
 
 class Reservation(Base):
     __tablename__ = "reservations"
-    id               = Column(Integer, primary_key=True)
+    id                = Column(Integer, primary_key=True)
     user_id          = Column(Integer, ForeignKey("users.id"))
     schedule_id      = Column(Integer, ForeignKey("schedules.id"))
     seat             = Column(String(5))
@@ -121,7 +134,7 @@ def init_db():
 
 
 def _seed(db: Session):
-    # Usuarios
+    # Usuarios (Se crearán automáticamente usando el hash seguro de bcrypt)
     db.add_all([
         User(id=1, name="Admin EuskoMove", email="admin@euskomove.eus",
              password=_hash("admin123"), role="admin"),
