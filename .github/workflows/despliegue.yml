@@ -73,7 +73,7 @@ jobs:
 
       - name: Show URL
         if: ${{ github.event.inputs.action != 'destroy' }}
-        run: echo "App URL: ${{ steps.tfout.outputs.web_app_url }}"
+        run: 'echo "App URL: ${{ steps.tfout.outputs.web_app_url }}"'
 
   deploy:
     runs-on: ubuntu-latest
@@ -97,7 +97,4 @@ jobs:
           package: .
 
       - name: Final URL
-        run: echo "URL final: ${{ needs.terraform.outputs.web_app_url }}"
-# refresco workflow_dispatch
-
-# refresco workflow_dispatch
+        run: 'echo "URL final: ${{ needs.terraform.outputs.web_app_url }}"'
