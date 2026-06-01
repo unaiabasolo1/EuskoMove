@@ -35,3 +35,11 @@ output "key_vault_name" {
 output "postgresql_fqdn" {
   value = azurerm_postgresql_flexible_server.this.fqdn
 }
+
+output "app_url" {
+  value = module.backend.app_url
+}
+
+output "web_app_name" {
+  value = module.backend.web_app_name
+}

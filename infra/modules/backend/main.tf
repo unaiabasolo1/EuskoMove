@@ -39,3 +39,7 @@ resource "azurerm_linux_web_app" "api" {
 output "api_url" {
   value = "https://${azurerm_linux_web_app.api.default_hostname}"
 }
+
+output "app_url" {
+  value = azurerm_linux_web_app.this.default_hostname
+}
