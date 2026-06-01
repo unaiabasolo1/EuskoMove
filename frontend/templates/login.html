@@ -4,7 +4,6 @@
 <div class="container section form-page">
   <div class="form-card card">
     <h1>Iniciar sesión</h1>
-    <p class="muted small">Demo: <code>admin@euskomove.eus</code> / <code>admin123</code></p>
     <form method="post" action="{{ url_for('auth.do_login') }}" novalidate>
       <input type="hidden" name="next" value="{{ next }}">
       <div class="field-group"><label for="email">Email</label>

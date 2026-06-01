@@ -26,7 +26,6 @@ def do_login():
     try:
         user = db.query(User).filter_by(email=email).first()
         
-        # 👇 CAMBIO CLAVE: Comprobamos la contraseña usando el verificador robusto de bcrypt
         if not user or not check_password(pw, user.password):
             flash("Email o contraseña incorrectos.", "error")
             return render_template("login.html", next=nxt, email=email)
@@ -68,7 +67,6 @@ def do_register():
             flash("Ese email ya está registrado.", "error")
             return render_template("register.html", name=name, email=email)
             
-        # 👇 Al usar _hash(pw), el nuevo db.py creará automáticamente un hash bcrypt seguro
         user = User(name=name, email=email, password=_hash(pw), role="user")
         db.add(user)
         db.commit()
