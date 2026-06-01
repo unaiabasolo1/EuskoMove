@@ -98,3 +98,4 @@ jobs:
 
       - name: Final URL
         run: echo "URL final: ${{ needs.terraform.outputs.web_app_url }}"
+# refresco workflow_dispatch
