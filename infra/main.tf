@@ -110,7 +110,7 @@ resource "random_password" "db_password" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "this" {
-  name                       = "${var.project_name}-${var.environment}-kv"
+  name                       = "${var.project_name}-${var.environment}-kv-${random_string.suffix.result}"   # euskomove-dev-kv-ab12cd
   location                   = azurerm_resource_group.this.location
   resource_group_name        = azurerm_resource_group.this.name
   tenant_id                  = data.azurerm_client_config.current.tenant_id
@@ -127,7 +127,7 @@ resource "azurerm_key_vault" "this" {
 resource "azurerm_role_assignment" "kv_terraform" {
   scope                = azurerm_key_vault.this.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id         = "927bb819-e8cd-4bf6-a766-80f4f25d3625"
+  principal_id = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_key_vault_secret" "db_password" {
