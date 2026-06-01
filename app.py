@@ -34,7 +34,9 @@ Talisman(
 )
 # ─────────────────────────────────────────────────────────────────────────────
 
-app.secret_key = os.environ.get("FLASK_SECRET_KEY", "euskomove-secret-2025-eus")
+app.secret_key = os.environ.get("FLASK_SECRET_KEY")
+if not app.secret_key:
+    raise RuntimeError("FLASK_SECRET_KEY no está configurado")
 
 with app.app_context():
     init_db()
