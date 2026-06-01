@@ -30,7 +30,6 @@
 - [Instalación](#instalación)
 - [Variables de entorno](#variables-de-entorno)
 - [Endpoints principales](#endpoints-principales)
-- [Licencia](#licencia)
 
 ---
 

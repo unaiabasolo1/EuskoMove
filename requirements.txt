@@ -2,3 +2,6 @@ flask>=3.0
 gunicorn
 sqlalchemy>=2.0
 psycopg2-binary
+flask-talisman
+bcrypt
+pytest

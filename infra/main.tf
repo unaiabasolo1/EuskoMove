@@ -61,6 +61,8 @@ resource "azurerm_linux_web_app" "this" {
       PYTHONUNBUFFERED               = "1"
       WEBSITES_PORT                  = "8000"
       DATABASE_URL                   = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=db-connection-string)"
+      # ─── Secreto de Flask añadido desde Key Vault ───
+      FLASK_SECRET_KEY               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=flask-secret-key)"
     },
     var.app_settings,
   )
@@ -86,6 +88,13 @@ resource "azurerm_linux_web_app" "this" {
       app_settings["WEBSITE_RUN_FROM_PACKAGE"],
     ]
   }
+
+  # ─── DETALLE EXTRA: Asegura que el Key Vault y los secretos existan antes de levantar la Web App ───
+  depends_on = [
+    azurerm_key_vault.this,
+    azurerm_key_vault_secret.flask_secret_key,
+    azurerm_key_vault_secret.db_connection_string
+  ]
 }
 
 # ─── Contraseña aleatoria para la BD ─────────────────────────────────────────
@@ -131,6 +140,15 @@ resource "azurerm_key_vault_secret" "db_password" {
 resource "azurerm_key_vault_secret" "db_connection_string" {
   name         = "db-connection-string"
   value        = "postgresql://${var.db_admin_username}:${random_password.db_password.result}@${azurerm_postgresql_flexible_server.this.fqdn}:5432/${var.db_name}?sslmode=require"
+  key_vault_id = azurerm_key_vault.this.id
+  depends_on   = [azurerm_role_assignment.kv_terraform]
+}
+
+# ─── Secreto para FLASK_SECRET_KEY en Key Vault ───────────────────────────────
+
+resource "azurerm_key_vault_secret" "flask_secret_key" {
+  name         = "flask-secret-key"
+  value        = "euskomove-secret-2025-eus"
   key_vault_id = azurerm_key_vault.this.id
   depends_on   = [azurerm_role_assignment.kv_terraform]
 }
