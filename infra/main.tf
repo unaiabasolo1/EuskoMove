@@ -10,11 +10,11 @@ locals {
   )
 }
 
-resource "random_string" "suffix" {
-  length  = 6
-  upper   = false
-  special = false
-  numeric = true
+# ─── Sufijo fijo para nombres globalmente únicos (Key Vault, Web App) ───
+# Antes era random_string, pero se regeneraba y recreaba el Key Vault.
+# Lo fijamos al valor que ya existe en Azure para reutilizar los recursos.
+locals {
+  suffix = "uu0enx"
 }
 
 resource "azurerm_resource_group" "this" {
@@ -33,7 +33,7 @@ resource "azurerm_service_plan" "this" {
 }
 
 resource "azurerm_linux_web_app" "this" {
-  name                = "${local.name_prefix}-${random_string.suffix.result}"
+  name                = "${local.name_prefix}-${local.suffix}"
   resource_group_name = azurerm_resource_group.this.name
   location            = azurerm_resource_group.this.location
   service_plan_id     = azurerm_service_plan.this.id
@@ -110,13 +110,14 @@ resource "random_password" "db_password" {
 data "azurerm_client_config" "current" {}
 
 resource "azurerm_key_vault" "this" {
-  name                       = "${var.project_name}-${var.environment}-kv-${random_string.suffix.result}"   # euskomove-dev-kv-ab12cd
+  name                       = "${var.project_name}-${var.environment}-kv-${local.suffix}"
   location                   = azurerm_resource_group.this.location
   resource_group_name        = azurerm_resource_group.this.name
   tenant_id                  = data.azurerm_client_config.current.tenant_id
   sku_name                   = "standard"
   soft_delete_retention_days = 7
   purge_protection_enabled   = false
+  enable_rbac_authorization  = true
   tags                       = local.common_tags
 
   lifecycle {
@@ -124,24 +125,30 @@ resource "azurerm_key_vault" "this" {
   }
 }
 
+# ─── Espera para que la asignación de rol RBAC se propague antes de crear secretos ───
+resource "time_sleep" "wait_for_rbac" {
+  depends_on      = [azurerm_role_assignment.kv_terraform]
+  create_duration = "60s"
+}
+
 resource "azurerm_role_assignment" "kv_terraform" {
   scope                = azurerm_key_vault.this.id
   role_definition_name = "Key Vault Secrets Officer"
-  principal_id = data.azurerm_client_config.current.object_id
+  principal_id         = data.azurerm_client_config.current.object_id
 }
 
 resource "azurerm_key_vault_secret" "db_password" {
   name         = "db-password"
   value        = random_password.db_password.result
   key_vault_id = azurerm_key_vault.this.id
-  depends_on   = [azurerm_role_assignment.kv_terraform]
+  depends_on   = [time_sleep.wait_for_rbac]
 }
 
 resource "azurerm_key_vault_secret" "db_connection_string" {
   name         = "db-connection-string"
   value        = "postgresql://${var.db_admin_username}:${random_password.db_password.result}@${azurerm_postgresql_flexible_server.this.fqdn}:5432/${var.db_name}?sslmode=require"
   key_vault_id = azurerm_key_vault.this.id
-  depends_on   = [azurerm_role_assignment.kv_terraform]
+  depends_on   = [time_sleep.wait_for_rbac]
 }
 
 # ─── Secreto para FLASK_SECRET_KEY en Key Vault ───────────────────────────────
@@ -150,7 +157,7 @@ resource "azurerm_key_vault_secret" "flask_secret_key" {
   name         = "flask-secret-key"
   value        = "euskomove-secret-2025-eus"
   key_vault_id = azurerm_key_vault.this.id
-  depends_on   = [azurerm_role_assignment.kv_terraform]
+  depends_on   = [time_sleep.wait_for_rbac]
 }
 
 # ─── PostgreSQL ───────────────────────────────────────────────────────────────
