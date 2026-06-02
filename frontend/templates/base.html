@@ -27,14 +27,14 @@
       <a href="{{ url_for('public.bonos') }}" {% if request.endpoint=='public.bonos' %}class="active"{% endif %}>Bonos</a>
       {% if current_user() %}
         <a href="{{ url_for('res.my_trips') }}" {% if request.endpoint=='res.my_trips' %}class="active"{% endif %}>Mis viajes</a>
-        {% if current_user().get('role')=='admin' %}
+        {% if current_user().role=='admin' %}
           <a href="{{ url_for('admin.admin') }}" {% if request.endpoint=='admin.admin' %}class="active"{% endif %}>Admin</a>
         {% endif %}
       {% endif %}
     </nav>
     <div class="nav-actions">
       {% if current_user() %}
-        <span class="nav-user">{{ current_user().get('name','').split()[0] }}</span>
+        <span class="nav-user">{{ current_user().name.split()[0] }}</span>
         <form method="post" action="{{ url_for('auth.logout') }}" style="display:inline">
           <button class="btn btn-ghost btn-sm">Salir</button>
         </form>
