@@ -6,10 +6,12 @@ Ejecutar desde la carpeta raíz del proyecto:
 import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+
 from flask import Flask, send_from_directory
 from flask_talisman import Talisman
 
-from backend.routes.auth_routes import auth_bp
+
+from backend.routes.auth_routes import auth_bp, current_user
 from backend.routes.public_routes import public_bp
 from backend.routes.reservation_routes import res_bp
 from backend.routes.notice_routes import notice_bp
@@ -17,15 +19,18 @@ from backend.routes.admin_routes import admin_bp
 from backend.routes.bono_routes import bono_bp
 from backend.db import init_db
 
+
 app = Flask(
     __name__,
     template_folder="frontend/templates",
     static_folder="frontend/static",
 )
 
+
 # ─── CONFIGURACIÓN DE SEGURIDAD CON FLASK-TALISMAN ───────────────────────────
 # Forzar HTTPS solo en producción (en local con debug=True nos dejará usar http://)
 is_production = os.environ.get("FLASK_ENV") == "production"
+
 
 Talisman(
     app,
@@ -34,18 +39,24 @@ Talisman(
 )
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 app.secret_key = os.environ.get("FLASK_SECRET_KEY")
 if not app.secret_key:
     raise RuntimeError("FLASK_SECRET_KEY no está configurado")
 
+
 with app.app_context():
     init_db()
 
+
+# ─── Inyecta el usuario actual REAL en todas las plantillas ───────────────────
+# Antes esto devolvía siempre None y por eso la barra de navegación no detectaba
+# al usuario logueado. Ahora usa el current_user() real de auth_routes,
+# que devuelve el objeto User de SQLAlchemy (o None si no hay sesión).
 @app.context_processor
 def inject_current_user():
-    def current_user():
-        return None
     return dict(current_user=current_user)
+
 
 
 app.register_blueprint(public_bp)
@@ -54,6 +65,7 @@ app.register_blueprint(res_bp)
 app.register_blueprint(notice_bp)
 app.register_blueprint(admin_bp)
 app.register_blueprint(bono_bp)
+
 
 
 if __name__ == "__main__":
