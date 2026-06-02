@@ -4,18 +4,87 @@
 <div class="container section form-page">
   <div class="form-card card">
     <h1>Crear cuenta</h1>
-    <form method="post" action="{{ url_for('auth.do_register') }}" novalidate>
-      <div class="field-group"><label for="name">Nombre completo</label>
-        <input type="text" name="name" id="name" value="{{ name }}" required autocomplete="name"></div>
-      <div class="field-group"><label for="email">Email</label>
-        <input type="email" name="email" id="email" value="{{ email }}" required autocomplete="email"></div>
-      <div class="field-group"><label for="password">Contraseña</label>
-        <input type="password" name="password" id="password" required autocomplete="new-password"></div>
-      <div class="field-group"><label for="password2">Repite la contraseña</label>
-        <input type="password" name="password2" id="password2" required autocomplete="new-password"></div>
+    <form method="post" action="{{ url_for('auth.do_register') }}" novalidate id="register-form">
+      <div class="field-group">
+        <label for="name">Nombre completo</label>
+        <input type="text" name="name" id="name" value="{{ name }}" required autocomplete="name"
+               minlength="3" maxlength="30"
+               pattern="[A-Za-zÀ-ÿ0-9 ._\-]{3,30}"
+               title="Entre 3 y 30 caracteres. Solo letras, números, espacios y . _ -">
+      </div>
+      <div class="field-group">
+        <label for="email">Email</label>
+        <input type="email" name="email" id="email" value="{{ email }}" required autocomplete="email"
+               title="Introduce un email válido, por ejemplo nombre@dominio.com">
+      </div>
+      <div class="field-group">
+        <label for="password">Contraseña</label>
+        <input type="password" name="password" id="password" required autocomplete="new-password"
+               minlength="8" maxlength="64"
+               title="Mínimo 8 caracteres. Puedes usar una frase larga; no se exigen símbolos.">
+      </div>
+      <div class="field-group">
+        <label for="password2">Repite la contraseña</label>
+        <input type="password" name="password2" id="password2" required autocomplete="new-password"
+               minlength="8" maxlength="64">
+      </div>
+      <p id="register-error" class="small" style="color:#c0392b; display:none;"></p>
       <button type="submit" class="btn btn-primary btn-full">Crear cuenta</button>
     </form>
     <p class="form-alt small">¿Ya tienes cuenta? <a href="{{ url_for('auth.login') }}">Entra aquí</a></p>
   </div>
 </div>
+
+<script>
+(function () {
+  var form = document.getElementById('register-form');
+  if (!form) return;
+  var err = document.getElementById('register-error');
+
+  var RESERVADOS = ['admin','root','support','administrator','superuser','system'];
+
+  function mostrarError(msg) {
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  form.addEventListener('submit', function (e) {
+    err.style.display = 'none';
+    err.textContent = '';
+
+    var name = form.name.value.trim();
+    var email = form.email.value.trim();
+    var pass = form.password.value;
+    var pass2 = form.password2.value;
+
+    // Nombre: 3-30 caracteres y caracteres permitidos
+    var NAME_RE = /^[A-Za-zÀ-ÿ0-9 ._\-]{3,30}$/;
+    if (!NAME_RE.test(name)) {
+      e.preventDefault();
+      return mostrarError('El nombre debe tener entre 3 y 30 caracteres y solo letras, números, espacios y . _ -');
+    }
+    if (RESERVADOS.indexOf(name.toLowerCase()) !== -1) {
+      e.preventDefault();
+      return mostrarError('Ese nombre está reservado, elige otro.');
+    }
+
+    // Email: formato básico
+    var EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    if (!EMAIL_RE.test(email)) {
+      e.preventDefault();
+      return mostrarError('Introduce un email válido (ejemplo: nombre@dominio.com).');
+    }
+
+    // Contraseña: 8-64, sin forzar símbolos (permite passphrases)
+    if (pass.length < 8 || pass.length > 64) {
+      e.preventDefault();
+      return mostrarError('La contraseña debe tener entre 8 y 64 caracteres.');
+    }
+    if (pass !== pass2) {
+      e.preventDefault();
+      return mostrarError('Las contraseñas no coinciden.');
+    }
+  });
+})();
+</script>
 {% endblock %}
