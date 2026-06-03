@@ -1,0 +1,33 @@
+#!/bin/sh
+# .git/hooks/pre-commit
+# Se ejecuta automáticamente antes de cada git commit.
+# Si los tests fallan, el commit se cancela.
+
+echo ""
+echo "╔══════════════════════════════════════════╗"
+echo "║   EuskoMove — Ejecutando tests...        ║"
+echo "╚══════════════════════════════════════════╝"
+echo ""
+
+# Ejecutar pytest
+python -m pytest tests/ -v --tb=short
+
+# Comprobar si pytest ha fallado
+if [ $? -ne 0 ]; then
+    echo ""
+    echo "╔══════════════════════════════════════════╗"
+    echo "║   Tests fallidos. Commit cancelado.      ║"
+    echo "║   Corrige los errores y vuelve a hacer   ║"
+    echo "║   git commit.                            ║"
+    echo "╚══════════════════════════════════════════╝"
+    echo ""
+    exit 1
+fi
+
+echo ""
+echo "╔══════════════════════════════════════════╗"
+echo "║   Todos los tests han pasado.            ║"
+echo "║   Procediendo con el commit...           ║"
+echo "╚══════════════════════════════════════════╝"
+echo ""
+exit 0
