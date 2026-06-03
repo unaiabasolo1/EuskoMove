@@ -1,33 +1,26 @@
 #!/bin/sh
-# .git/hooks/pre-commit
-# Se ejecuta automáticamente antes de cada git commit.
-# Si los tests fallan, el commit se cancela.
+echo ""
+echo "╔══════════════════════════════════════════════════════╗"
+echo "║   EuskoMove — Ejecutando todos los tests...          ║"
+echo "╚══════════════════════════════════════════════════════╝"
+echo ""
+echo "▶ Tests unitarios..."
+python -m pytest tests/test_unitarios.py -v --tb=short -q
+if [ $? -ne 0 ]; then echo "Tests unitarios fallidos. Commit cancelado."; exit 1; fi
 
 echo ""
-echo "╔══════════════════════════════════════════╗"
-echo "║   EuskoMove — Ejecutando tests...        ║"
-echo "╚══════════════════════════════════════════╝"
-echo ""
-
-# Ejecutar pytest
-python -m pytest tests/ -v --tb=short
-
-# Comprobar si pytest ha fallado
-if [ $? -ne 0 ]; then
-    echo ""
-    echo "╔══════════════════════════════════════════╗"
-    echo "║   Tests fallidos. Commit cancelado.      ║"
-    echo "║   Corrige los errores y vuelve a hacer   ║"
-    echo "║   git commit.                            ║"
-    echo "╚══════════════════════════════════════════╝"
-    echo ""
-    exit 1
-fi
+echo "▶ Tests de integración..."
+python -m pytest tests/test_integracion.py -v --tb=short -q
+if [ $? -ne 0 ]; then echo "Tests de integración fallidos. Commit cancelado."; exit 1; fi
 
 echo ""
-echo "╔══════════════════════════════════════════╗"
-echo "║   Todos los tests han pasado.            ║"
-echo "║   Procediendo con el commit...           ║"
-echo "╚══════════════════════════════════════════╝"
+echo "▶ Tests de características..."
+python -m pytest tests/test_caracteristicas.py -v --tb=short -q
+if [ $? -ne 0 ]; then echo "Tests de características fallidos. Commit cancelado."; exit 1; fi
+
+echo ""
+echo "╔══════════════════════════════════════════════════════╗"
+echo "║      Todos los tests han pasado. Commit OK.          ║"
+echo "╚══════════════════════════════════════════════════════╝"
 echo ""
 exit 0
