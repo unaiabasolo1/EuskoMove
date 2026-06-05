@@ -73,6 +73,9 @@ resource "azurerm_linux_web_app" "this" {
       FLASK_SECRET_KEY               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=flask-secret-key)"
       # ─── Azure Monitor / Application Insights ─────────────────────
       APPLICATIONINSIGHTS_CONNECTION_STRING = module.monitoring.connection_string
+      # ─── Contraseñas de usuarios iniciales desde Key Vault ────────
+      ADMIN_PASSWORD                 = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=admin-password)"
+      USER_PASSWORD                  = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=user-password)"
     },
     var.app_settings,
   )
@@ -102,7 +105,9 @@ resource "azurerm_linux_web_app" "this" {
   depends_on = [
     azurerm_key_vault.this,
     azurerm_key_vault_secret.flask_secret_key,
-    azurerm_key_vault_secret.db_connection_string
+    azurerm_key_vault_secret.db_connection_string,
+    azurerm_key_vault_secret.admin_password,
+    azurerm_key_vault_secret.user_password,
   ]
 }
 
@@ -138,8 +143,6 @@ resource "azurerm_role_assignment" "kv_terraform" {
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
-# ─── 3c) Contraseña fija desde variable ──────────────────────────────────────
-
 resource "azurerm_key_vault_secret" "db_password" {
   name         = "db-password"
   value        = var.db_password
@@ -159,6 +162,22 @@ resource "azurerm_key_vault_secret" "db_connection_string" {
 resource "azurerm_key_vault_secret" "flask_secret_key" {
   name         = "flask-secret-key"
   value        = "euskomove-secret-2025-eus"
+  key_vault_id = azurerm_key_vault.this.id
+  depends_on   = [time_sleep.wait_for_rbac]
+}
+
+# ─── Contraseñas de usuarios iniciales ───────────────────────────────────────
+
+resource "azurerm_key_vault_secret" "admin_password" {
+  name         = "admin-password"
+  value        = var.admin_password
+  key_vault_id = azurerm_key_vault.this.id
+  depends_on   = [time_sleep.wait_for_rbac]
+}
+
+resource "azurerm_key_vault_secret" "user_password" {
+  name         = "user-password"
+  value        = var.user_password
   key_vault_id = azurerm_key_vault.this.id
   depends_on   = [time_sleep.wait_for_rbac]
 }
