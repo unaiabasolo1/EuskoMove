@@ -11,8 +11,6 @@ locals {
 }
 
 # ─── Sufijo fijo para nombres globalmente únicos (Key Vault, Web App) ───
-# Antes era random_string, pero se regeneraba y recreaba el Key Vault.
-# Lo fijamos al valor que ya existe en Azure para reutilizar los recursos.
 locals {
   suffix = "uu0enx"
 }
@@ -101,20 +99,11 @@ resource "azurerm_linux_web_app" "this" {
     ]
   }
 
-  # ─── DETALLE EXTRA: Asegura que el Key Vault y los secretos existan antes de levantar la Web App ───
   depends_on = [
     azurerm_key_vault.this,
     azurerm_key_vault_secret.flask_secret_key,
     azurerm_key_vault_secret.db_connection_string
   ]
-}
-
-# ─── Contraseña aleatoria para la BD ─────────────────────────────────────────
-
-resource "random_password" "db_password" {
-  length           = 24
-  special          = true
-  override_special = "!#$%&*()-_=+[]{}<>:?"
 }
 
 # ─── Key Vault ────────────────────────────────────────────────────────────────
@@ -149,16 +138,18 @@ resource "azurerm_role_assignment" "kv_terraform" {
   principal_id         = data.azurerm_client_config.current.object_id
 }
 
+# ─── 3c) Contraseña fija desde variable ──────────────────────────────────────
+
 resource "azurerm_key_vault_secret" "db_password" {
   name         = "db-password"
-  value        = random_password.db_password.result
+  value        = var.db_password
   key_vault_id = azurerm_key_vault.this.id
   depends_on   = [time_sleep.wait_for_rbac]
 }
 
 resource "azurerm_key_vault_secret" "db_connection_string" {
   name         = "db-connection-string"
-  value        = "postgresql://${var.db_admin_username}:${random_password.db_password.result}@${azurerm_postgresql_flexible_server.this.fqdn}:5432/${var.db_name}?sslmode=require"
+  value        = "postgresql://${var.db_admin_username}:${var.db_password}@${azurerm_postgresql_flexible_server.this.fqdn}:5432/${var.db_name}?sslmode=require"
   key_vault_id = azurerm_key_vault.this.id
   depends_on   = [time_sleep.wait_for_rbac]
 }
@@ -180,7 +171,7 @@ resource "azurerm_postgresql_flexible_server" "this" {
   location               = azurerm_resource_group.this.location
   version                = "16"
   administrator_login    = var.db_admin_username
-  administrator_password = random_password.db_password.result
+  administrator_password = var.db_password
   storage_mb             = 32768
   sku_name               = var.db_sku
   backup_retention_days  = 7

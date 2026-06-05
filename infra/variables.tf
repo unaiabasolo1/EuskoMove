@@ -83,3 +83,9 @@ variable "db_sku" {
   type        = string
   default     = "B_Standard_B1ms"
 }
+
+variable "db_password" {
+  description = "Contraseña fija del administrador de PostgreSQL."
+  type        = string
+  sensitive   = true
+}
