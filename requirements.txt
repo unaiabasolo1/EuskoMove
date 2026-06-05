@@ -6,4 +6,3 @@ flask-talisman
 bcrypt
 pytest
 opencensus-ext-azure>=1.1.13
-opencensus-ext-flask>=0.8.2
