@@ -21,3 +21,9 @@ output "instrumentation_key" {
   value     = azurerm_application_insights.ai.instrumentation_key
   sensitive = true
 }
+
+# Connection string 
+output "connection_string" {
+  value     = azurerm_application_insights.ai.connection_string
+  sensitive = true
+}

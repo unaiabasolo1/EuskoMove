@@ -35,3 +35,14 @@ output "key_vault_name" {
 output "postgresql_fqdn" {
   value = azurerm_postgresql_flexible_server.this.fqdn
 }
+
+output "application_insights_connection_string" {
+  description = "Connection string de Application Insights. Inyectada automáticamente en la Web App."
+  value       = module.monitoring.connection_string
+  sensitive   = true
+}
+
+output "log_analytics_workspace_name" {
+  description = "Nombre del Log Analytics Workspace donde se centralizan los logs."
+  value       = "law-euskomove"
+}
