@@ -30,6 +30,27 @@ logging.basicConfig(
 logger = logging.getLogger("euskomove")
 logger.info("Inicializando aplicación EuskoMove (nivel de log: %s)", _nivel)
 
+# ─── AZURE APPLICATION INSIGHTS ───────────────────────────────────────
+# Se activa solo si la variable de entorno está presente (la inyecta Terraform).
+_ai_conn = os.environ.get("APPLICATIONINSIGHTS_CONNECTION_STRING")
+if _ai_conn:
+    try:
+        from opencensus.ext.azure.log_exporter import AzureLogHandler
+        _azure_handler = AzureLogHandler(connection_string=_ai_conn)
+        _azure_handler.setLevel(logging.WARNING)   # INFO y DEBUG van a stdout; aquí solo WARNING+
+        logging.getLogger("euskomove").addHandler(_azure_handler)
+        logger.info("Azure Application Insights activado (handler de logs registrado)")
+    except ImportError:
+        logger.warning(
+            "opencensus-ext-azure no está instalado: los logs NO se enviarán a Application Insights. "
+            "Ejecuta: pip install opencensus-ext-azure"
+        )
+else:
+    logger.info(
+        "APPLICATIONINSIGHTS_CONNECTION_STRING no definida — logs solo en stdout (entorno local)"
+    )
+# ─────────────────────────────────────────────────────────────────────────────
+
 app = Flask(
     __name__,
     template_folder="frontend/templates",

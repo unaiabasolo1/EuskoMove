@@ -23,6 +23,16 @@ resource "azurerm_resource_group" "this" {
   tags     = local.common_tags
 }
 
+# ─── Monitoring: Log Analytics + Application Insights ─────────────────
+
+module "monitoring" {
+  source              = "./modules/monitoring"
+  resource_group_name = azurerm_resource_group.this.name
+  location            = azurerm_resource_group.this.location
+}
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 resource "azurerm_service_plan" "this" {
   name                = "${local.name_prefix}-plan"
   resource_group_name = azurerm_resource_group.this.name
@@ -63,6 +73,8 @@ resource "azurerm_linux_web_app" "this" {
       DATABASE_URL                   = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=db-connection-string)"
       # ─── Secreto de Flask añadido desde Key Vault ───
       FLASK_SECRET_KEY               = "@Microsoft.KeyVault(VaultName=${azurerm_key_vault.this.name};SecretName=flask-secret-key)"
+      # ─── Azure Monitor / Application Insights ─────────────────────
+      APPLICATIONINSIGHTS_CONNECTION_STRING = module.monitoring.connection_string
     },
     var.app_settings,
   )
