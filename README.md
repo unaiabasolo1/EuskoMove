@@ -126,10 +126,9 @@ EuskoMove/
 
    Al finalizar el `terraform apply`, el propio workflow ejecuta el deploy de la aplicación automáticamente.
 
-4. **Obtener la URL de la app**
-```bash
-   az webapp list --resource-group euskomove-dev-rg --query "[].defaultHostName" -o tsv
-```
+4. **Accede a la aplicación**
+
+   [https://euskomove-dev-uu0enx.azurewebsites.net](https://euskomove-dev-uu0enx.azurewebsites.net)
 
 ---
 
