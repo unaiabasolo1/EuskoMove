@@ -89,3 +89,15 @@ variable "db_password" {
   type        = string
   sensitive   = true
 }
+
+variable "admin_password" {
+  description = "Contraseña del usuario admin de la web."
+  type        = string
+  sensitive   = true
+}
+
+variable "user_password" {
+  description = "Contraseña del usuario de prueba de la web."
+  type        = string
+  sensitive   = true
+}

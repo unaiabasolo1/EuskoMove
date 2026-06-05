@@ -48,7 +48,7 @@ class User(Base):
     id       = Column(Integer, primary_key=True)
     name     = Column(String(120), nullable=False)
     email    = Column(String(120), unique=True, nullable=False)
-    password = Column(String(64), nullable=False)  # El hash de bcrypt (60 chars) cabe perfectamente aquí
+    password = Column(String(64), nullable=False)
     role     = Column(String(20), default="user")
     reservations = relationship("Reservation", back_populates="user")
     bonos        = relationship("UserBono", back_populates="user")
@@ -134,12 +134,12 @@ def init_db():
 
 
 def _seed(db: Session):
-    # Usuarios (Se crearán automáticamente usando el hash seguro de bcrypt)
+    # Usuarios — contraseñas leídas desde Key Vault vía variables de entorno
     db.add_all([
         User(id=1, name="Admin EuskoMove", email="admin@euskomove.eus",
-             password=_hash("admin123"), role="admin"),
+             password=_hash(os.environ.get("ADMIN_PASSWORD", "changeme")), role="admin"),
         User(id=2, name="Ane Etxebarria", email="ane@euskomove.eus",
-             password=_hash("user123"), role="user"),
+             password=_hash(os.environ.get("USER_PASSWORD", "changeme")), role="user"),
     ])
 
     # Rutas
