@@ -101,3 +101,9 @@ variable "user_password" {
   type        = string
   sensitive   = true
 }
+
+variable "flask_secret_key" {
+  description = "Clave secreta de Flask para firmar las cookies de sesión. Genera un valor aleatorio con: python -c \"import secrets; print(secrets.token_hex(32))\""
+  type        = string
+  sensitive   = true
+}

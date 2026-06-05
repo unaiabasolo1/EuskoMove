@@ -161,7 +161,7 @@ resource "azurerm_key_vault_secret" "db_connection_string" {
 
 resource "azurerm_key_vault_secret" "flask_secret_key" {
   name         = "flask-secret-key"
-  value        = "euskomove-secret-2025-eus"
+  value        = var.flask_secret_key
   key_vault_id = azurerm_key_vault.this.id
   depends_on   = [time_sleep.wait_for_rbac]
 }
